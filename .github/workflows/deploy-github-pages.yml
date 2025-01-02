@@ -3,6 +3,9 @@ env:
   # FEATURES:
   # ###########################################################################
   #
+  # For offline support: (set to 'true' / 'false')
+  NG_USE_SERVICE_WORKER: 'true'
+  #
   # Use the "Offers" content-type: (set to 'true' / 'false')
   NG_USE_OFFERS: 'true'
   #
@@ -37,15 +40,15 @@ env:
   # ###########################################################################
   #
   # A (short) name, visible in the top (navigation-)bar and in the browser's tab/window-title (and search-engine results)
-  TXT_APP_NAME: 'HIA Demo \n Example content'
+  TXT_APP_NAME: 'HIA \n Demo Content'
   # An absolute/data-URL to an image, visible in the top (navigation-)bar
-  TXT_APP_LOGO_URL: ''https://upload.wikimedia.org/wikipedia/commons/1/1a/Flag_of_the_Red_Cross.svg''
+  TXT_APP_LOGO_URL: 'https://upload.wikimedia.org/wikipedia/commons/1/1a/Flag_of_the_Red_Cross.svg'
   # The first heading, (only) visible on the main-page
-  TXT_MAIN_PAGE_HEADER: 'A demo page of HIA, filled in with example content'
+  TXT_MAIN_PAGE_HEADER: 'A demo instance of HIA filled with example content'
   # The (optional) introduction text, (only) visible on the main-page.
   # Can be multiple-lines of Markdown syntax or contain some HTML. Newlines need to be specified with `\n` or `<br />`.
   TXT_MAIN_PAGE_INTRO: >-
-    This Helpful Information web-App (HIA) is made to demonstrate how a possible HIA instance could look like for your National Society. 
+    This Helpful Information web-App (HIA) demo is created to show how HIA can look like for your National Society.
     \n
     \n
     Please click on the button below to access all information
@@ -135,11 +138,8 @@ jobs:
 
     steps:
       - name: Verify ENV configuration
-        if: env.REGIONS_SHEET_IDS == 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
-        run: |
-          echo "⚠️ Set the appropriate Google Spreadsheet ID in \`REGIONS_SHEET_IDS\`, instead of the default/placeholder-value: \`xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\`" >> $GITHUB_STEP_SUMMARY
-          echo "Edit [\`.github/workflows/deploy-github-pages.yml\`](../../edit/main/.github/workflows/deploy-github-pages.yml) to fix." >> $GITHUB_STEP_SUMMARY
-          echo "::error file=.github/workflows/deploy-github-pages.yml::Please change the ENV configuration to real-world values" && exit 1
+        if: env.REGIONS_SHEET_IDS == 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx' || env.TXT_APP_NAME == ''
+        run: 'echo "Please change the ENV configuration to real-world values." && exit 1'
 
       - name: Checkout
         uses: actions/checkout@v4
@@ -166,12 +166,13 @@ jobs:
       - name: Build
         working-directory: 'helpful-information'
         # NOTE: When the instance will be run on a custom (sub-)domain, remove the `--base-href`-flag+value.
-        run: 'npm run build:production -- --output-path=../www --base-href=/${GITHUB_REPOSITORY#*/}/'
+        run: 'npm run build:production -- --output-path=../www'
         env:
           # See all variables: https://github.com/rodekruis/helpful-information/blob/main/.env.example
           NG_PRODUCTION: 'true'
           GOOGLE_SHEETS_API_KEY: ${{ secrets.GOOGLE_SHEETS_API_KEY }}
           GOOGLE_SHEETS_API_URL: 'https://sheets.googleapis.com/v4/spreadsheets'
+          AI_CONNECTION_STRING: ${{ secrets.AI_CONNECTION_STRING }}
 
       - name: Add generic files
         run: 'cp -r ./public/. www/'
